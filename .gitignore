@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+/env/
+/bin/
+/include/
+/lib/
+/lib64/
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+*.log
+
+# PyMuPDF/FitZ cache (if any, though in-memory processing means less disk writes)
+
+# Specific to this project - if you were to store output files temporarily
+# *.pdf.tmp
+
+# Operating System files
+.DS_Store
+Thumbs.db 
