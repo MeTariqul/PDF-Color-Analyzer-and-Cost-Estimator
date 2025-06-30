@@ -1,3 +1,5 @@
-fastapi
-uvicorn
-pymupdf 
+Flask
+PyPDF2
+werkzeug
+pdf2image
+pillow 
