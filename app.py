@@ -76,4 +76,4 @@ def calculate():
     })
 
 if __name__ == '__main__':
-    app.run(debug=os.environ.get('FLASK_DEBUG', 'False').lower() == 'true') 
+    app.run(debug=os.environ.get('FLASK_DEBUG', 'False').lower() == 'true')
