@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 import os
+import uuid
+import tempfile
 from PyPDF2 import PdfReader
 
 UPLOAD_FOLDER = 'uploads'
@@ -8,6 +10,8 @@ ALLOWED_EXTENSIONS = {'pdf'}
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -27,17 +31,26 @@ def upload_pdf():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
     if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+        original_filename = secure_filename(file.filename)
+        # Create unique filename to prevent collisions and enhance security
+        unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+        
         try:
+            file.save(filepath)
             reader = PdfReader(filepath)
             num_pages = len(reader.pages)
         except Exception:
-            os.remove(filepath)
+            # Clean up file if it exists
+            if os.path.exists(filepath):
+                os.remove(filepath)
             return jsonify({'error': 'Failed to read PDF'}), 400
-        os.remove(filepath)
-        return jsonify({'filename': filename, 'num_pages': num_pages})
+        finally:
+            # Always clean up the uploaded file
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        
+        return jsonify({'filename': original_filename, 'num_pages': num_pages})
     return jsonify({'error': 'Invalid file type'}), 400
 
 @app.route('/calculate', methods=['POST'])
@@ -63,4 +76,4 @@ def calculate():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(debug=os.environ.get('FLASK_DEBUG', 'False').lower() == 'true')

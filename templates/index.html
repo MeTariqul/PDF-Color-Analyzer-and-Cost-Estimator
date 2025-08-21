@@ -113,19 +113,52 @@ $('#calcBtn').on('click', function() {
     } else if (mode === 'all_color') {
         color = numPages;
     } else {
-        let pageTypes = Array(numPages).fill('bw');
+        // More efficient algorithm: process ranges directly without creating large arrays
+        let ranges = [];
+        let hasValidRanges = false;
+        
         $('#rangesList .range-row').each(function() {
             let start = parseInt($(this).find('.start').val());
             let end = parseInt($(this).find('.end').val());
             let type = $(this).find('.type').val();
-            if (start > end || start < 1 || end > numPages) return;
-            for (let i = start - 1; i < end; i++) {
-                pageTypes[i] = type;
+            
+            // Validate range
+            if (isNaN(start) || isNaN(end) || start > end || start < 1 || end > numPages) {
+                alert(`Invalid range: ${start} to ${end}. Please check your inputs.`);
+                return false;
             }
+            
+            ranges.push({start: start, end: end, type: type});
+            hasValidRanges = true;
         });
-        for (let t of pageTypes) {
-            if (t === 'color') color++;
-            else bw++;
+        
+        if (!hasValidRanges) {
+            alert('Please add at least one valid page range.');
+            return;
+        }
+        
+        // Sort ranges by start position to handle overlaps
+        ranges.sort((a, b) => a.start - b.start);
+        
+        // Calculate pages efficiently without creating large arrays
+        let processedPages = new Set();
+        for (let range of ranges) {
+            for (let i = range.start; i <= range.end; i++) {
+                if (!processedPages.has(i)) {
+                    processedPages.add(i);
+                    if (range.type === 'color') {
+                        color++;
+                    } else {
+                        bw++;
+                    }
+                }
+            }
+        }
+        
+        // Add remaining pages as B&W if not all pages are covered
+        let totalProcessed = processedPages.size;
+        if (totalProcessed < numPages) {
+            bw += (numPages - totalProcessed);
         }
     }
     $.ajax({
